@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-exercise-deployment
+  labels:
+    app: devops-exercise
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-exercise
+  template:
+    metadata:
+      labels:
+        app: devops-exercise
+      annotations:
+        date: "+%H:%M:%S %d/%m/%y"
+    spec:
+      containers:
+      - name: devops-exercise
+        image: test.azurecr.io/devops-exercise:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: devops-exercise-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: devops-exercise-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-exercise-service
+spec:
+  selector:
+    app: devops-exercise
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-exercise-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /devops-exercise
+        backend:
+          service:
+            name: devops-exercise-service
+            port:
+              number: 8080
