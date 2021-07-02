@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'docker build -t test.azurecr.io/devops-exercise:latest .'
+                sh 'docker push test.azurecr.io/devops-exercise:latest'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'No tests available yet.'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'kubectl apply -f k8s.yaml'
+                sh 'kubectl annotate deployment devops-exercise-deployment date="$(date +%s)"'
+            }
+        }
+    }
+}
